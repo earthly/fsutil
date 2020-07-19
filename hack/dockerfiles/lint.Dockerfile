@@ -6,3 +6,4 @@ RUN wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master
 WORKDIR /go/src/github.com/tonistiigi/fsutil
 RUN --mount=target=/go/src/github.com/tonistiigi/fsutil --mount=target=/root/.cache,type=cache \
   golangci-lint run
+  golangci-lint run
