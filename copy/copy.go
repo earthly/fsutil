@@ -2,6 +2,7 @@ package fs
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -297,6 +298,7 @@ func (c *copier) copy(ctx context.Context, src, srcComponents, target string, ov
 			return err
 		}
 		if exclude {
+			fmt.Printf("excluding %v\n", srcComponents)
 			include = false
 		}
 	}

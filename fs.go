@@ -2,6 +2,7 @@ package fsutil
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -21,6 +22,7 @@ type FS interface {
 }
 
 func NewFS(root string, opt *WalkOpt) FS {
+	fmt.Printf("call to NewFS with excludes=%v\n", opt.ExcludePatterns)
 	return &fs{
 		root: root,
 		opt:  opt,

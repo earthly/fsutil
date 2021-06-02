@@ -2,6 +2,7 @@ package fsutil
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -29,6 +30,7 @@ type ReceiveOpt struct {
 }
 
 func Receive(ctx context.Context, conn Stream, dest string, opt ReceiveOpt) error {
+	fmt.Printf("call to fsutil.Receive\n")
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -174,6 +176,7 @@ func (r *receiver) run(ctx context.Context) error {
 				r.progressCb(size, false)
 			}
 
+			//fmt.Printf("ACB got packet %v\n", p.Type)
 			switch p.Type {
 			case types.PACKET_ERR:
 				return errors.Errorf("error from sender: %s", p.Data)
