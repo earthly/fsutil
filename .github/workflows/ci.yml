@@ -3,11 +3,11 @@ name: ci
 on:
   push:
     branches:
-      - master
+      - earthly-main
       - gh_test_ci
   pull_request:
     branches:
-      - master
+      - earthly-main
 
 jobs:
   test:
