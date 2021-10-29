@@ -1,11 +1,15 @@
-# syntax = docker/dockerfile:1.1-experimental
-FROM golang:1.13-alpine AS gomod
+# syntax = docker/dockerfile:1.2
+ARG GO_VERSION=1.16
+
+FROM golang:${GO_VERSION}-alpine AS gomod
 RUN  apk add --no-cache git
 WORKDIR /src
 RUN --mount=target=/src,rw \
   --mount=target=/go/pkg/mod,type=cache \
-  go mod tidy && go mod vendor && \
-  mkdir /out && cp -r go.mod go.sum /out
+  go mod tidy && \
+  mkdir /out && cp -r go.mod go.sum /out && \
+  cd bench && go mod tidy && \
+  mkdir /out/bench && cp -r go.mod go.sum /out/bench
 
 FROM scratch AS update
 COPY --from=gomod /out /
