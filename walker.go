@@ -18,8 +18,9 @@ type WalkOpt struct {
 	ExcludePatterns []string
 	// FollowPaths contains symlinks that are resolved into include patterns
 	// before performing the fs walk
-	FollowPaths []string
-	Map         FilterFunc
+	FollowPaths       []string
+	Map               FilterFunc
+	VerboseProgressCB VerboseProgressCB // earthly-specific
 }
 
 func Walk(ctx context.Context, p string, opt *WalkOpt, fn filepath.WalkFunc) error {
@@ -196,6 +197,9 @@ func Walk(ctx context.Context, p string, opt *WalkOpt, fn filepath.WalkFunc) err
 			}
 
 			if m {
+				if opt.VerboseProgressCB != nil { // earthly-specific
+					opt.VerboseProgressCB(path, StatusSkipped, 0)
+				}
 				if fi.IsDir() && onlyPrefixExcludeExceptions {
 					// Optimization: we can skip walking this dir if no
 					// exceptions to exclude patterns could match anything
