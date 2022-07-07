@@ -5,11 +5,11 @@ on:
     - cron: '0 8 */6 * *' # every 6 days
   push:
     branches:
-      - master
+      - earthly-main
       - gh_test_ci
   pull_request:
     branches:
-      - master
+      - earthly-main
 
 jobs:
   test:
