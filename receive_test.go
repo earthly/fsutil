@@ -40,7 +40,7 @@ func TestInvalidExcludePatterns(t *testing.T) {
 
 	eg.Go(func() error {
 		defer s1.(*fakeConnProto).closeSend()
-		err := Send(ctx, s1, NewFS(d, &WalkOpt{ExcludePatterns: []string{"!"}}), nil)
+		err := Send(ctx, s1, NewFS(d, &WalkOpt{ExcludePatterns: []string{"!"}}), nil, nil)
 		assert.Contains(t, err.Error(), "invalid excludepatterns")
 		return err
 	})
@@ -89,7 +89,7 @@ func TestCopyWithSubDir(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		return Send(ctx, s1, subdir, nil)
+		return Send(ctx, s1, subdir, nil, nil)
 	})
 	eg.Go(func() error {
 		return Receive(ctx, s2, dest, ReceiveOpt{})
@@ -127,12 +127,12 @@ func TestCopySwitchDirToFile(t *testing.T) {
 		eg.Go(func() error {
 			defer s1.(*fakeConnProto).closeSend()
 			return Send(ctx, s1, NewFS(src, &WalkOpt{
-				Map: func(_ string, s *types.Stat) bool {
+				Map: func(_ string, s *types.Stat) MapResult {
 					s.Uid = 0
 					s.Gid = 0
-					return true
+					return MapResultKeep
 				},
-			}), nil)
+			}), nil, nil)
 		})
 		eg.Go(func() error {
 			return Receive(ctx, s2, dest, ReceiveOpt{
@@ -198,12 +198,12 @@ func TestCopySimple(t *testing.T) {
 	eg.Go(func() error {
 		defer s1.(*fakeConnProto).closeSend()
 		return Send(ctx, s1, NewFS(d, &WalkOpt{
-			Map: func(_ string, s *types.Stat) bool {
+			Map: func(_ string, s *types.Stat) MapResult {
 				s.Uid = 0
 				s.Gid = 0
-				return true
+				return MapResultKeep
 			},
-		}), nil)
+		}), nil, nil)
 	})
 	eg.Go(func() error {
 		return Receive(ctx, s2, dest, ReceiveOpt{
@@ -276,12 +276,12 @@ file zzz.aa
 	eg.Go(func() error {
 		defer s1.(*fakeConnProto).closeSend()
 		return Send(ctx, s1, NewFS(d, &WalkOpt{
-			Map: func(_ string, s *types.Stat) bool {
+			Map: func(_ string, s *types.Stat) MapResult {
 				s.Uid = 0
 				s.Gid = 0
-				return true
+				return MapResultKeep
 			},
-		}), nil)
+		}), nil, nil)
 	})
 	eg.Go(func() error {
 		return Receive(ctx, s2, dest, ReceiveOpt{
@@ -355,10 +355,12 @@ type fakeConn struct {
 	sendChan chan *types.Packet
 }
 
+//nolint:unused
 func (fc *fakeConn) Context() context.Context {
 	return fc.ctx
 }
 
+//nolint:unused
 func (fc *fakeConn) RecvMsg(m interface{}) error {
 	p, ok := m.(*types.Packet)
 	if !ok {
@@ -373,6 +375,7 @@ func (fc *fakeConn) RecvMsg(m interface{}) error {
 	}
 }
 
+//nolint:unused
 func (fc *fakeConn) SendMsg(m interface{}) error {
 	p, ok := m.(*types.Packet)
 	if !ok {
