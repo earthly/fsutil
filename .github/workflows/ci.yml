@@ -1,5 +1,9 @@
 name: ci
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   schedule:
     - cron: '0 8 */6 * *' # every 6 days
@@ -12,36 +16,68 @@ on:
       - earthly-main
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - lint
+          - validate-gomod
+          - validate-shfmt
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Run
+        uses: docker/bake-action@v3
+        with:
+          targets: ${{ matrix.target }}
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - build
+          - cross
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Run
+        uses: docker/bake-action@v3
+        with:
+          targets: ${{ matrix.target }}
+
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: ["1.18", "1.19"]
+        go_version:
+          - "1.19"
+          - "1.20"
     env:
-      GO_VERSION: ${{ matrix.GO_VERSION }}
+      GO_VERSION: ${{ matrix.go_version }}
     steps:
       -
-         name: Set up Docker Buildx
-         uses: docker/setup-buildx-action@v1
-      -
         name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       -
-        name: Build
-        run: |
-          docker buildx bake
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
       -
         name: Test
-        run: |
-          docker buildx bake test
-      -
-        name: Linters
-        run: |
-          docker buildx bake lint validate-gomod validate-shfmt
-      -
-        name: Cross
-        run: |
-          docker buildx bake cross
+        uses: docker/bake-action@v3
+        with:
+          targets: test
 
   test-macos:
     runs-on: macos-latest
@@ -49,41 +85,34 @@ jobs:
       fail-fast: false
       matrix:
         go:
-          - 1.18
-          - 1.19
+          - "1.19"
+          - "1.20"
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       -
         name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go }}
-      -
-        name: Cache Go modules
-        uses: actions/cache@v2
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-${{ matrix.go }}-
       -
         name: Test
         run: |
           go test ./...
 
   test-freebsd-amd64:
-    runs-on: macos-10.15
+    runs-on: macos-latest
+    timeout-minutes: 60
     env:
       VAGRANT_VAGRANTFILE: hack/Vagrantfile.freebsd13
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       -
         name: Cache Vagrant boxes
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.vagrant.d/boxes
           key: ${{ runner.os }}-vagrant-${{ hashFiles('hack/Vagrantfile.freebsd13') }}
